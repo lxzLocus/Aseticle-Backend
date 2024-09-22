@@ -10,7 +10,7 @@ from app import Localization
 
 
 # gRPC サーバーをインポート
-from server import serve as grpc_serve
+from app.grpc_server import serve as grpc_serve
 
 load_dotenv()
 app = Flask(__name__)
