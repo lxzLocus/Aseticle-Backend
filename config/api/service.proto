@@ -1,0 +1,40 @@
+//cd /app/config/api
+//python -m grpc_tools.protoc -I./ --pyi_out=./pkg/ --python_out=./pkg/ --grpc_python_out=./pkg/ ./service.proto
+
+
+syntax = "proto3";
+
+package searchscholar;
+
+
+// The searchScholar service definition.
+service SearchScholar {
+  rpc Search (SearchScholarRequest) returns (SearchScholarResponse);
+}
+
+
+// Request message containing the query string.
+message SearchScholarRequest {
+  string query = 1;
+}
+
+// Response message containing an array of search results.
+message SearchScholarResponse {
+  repeated SearchResult results = 1;
+}
+
+// Search result message structure.
+message SearchResult {
+  string url = 1;
+  string title = 2;
+  string author = 3;
+  string conference = 4;
+  int32 pages = 5;
+  string date = 6;       // Format: YYMMDD
+  string abstract = 7;
+  int32 cite_num = 8;
+  bool submitted = 9;
+  int32 relevant_no = 10;
+  int32 tier = 11;
+}
+
