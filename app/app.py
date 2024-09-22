@@ -3,13 +3,10 @@ from flask_cors import CORS
 import asyncio
 from dotenv import load_dotenv
 import os
-import sys
 import threading
-# app/googlescholar_searcher.py のパスを追加
-sys.path.append('../app')  # この行を追加
-from googlescholar_searcher import scraping_main  # モジュールをインポート
+from src import scraping_main  # モジュールをインポート
 
-from config import Localization
+from app import Localization
 
 
 # gRPC サーバーをインポート

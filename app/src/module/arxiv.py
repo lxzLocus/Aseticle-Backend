@@ -10,7 +10,7 @@ from lxml import html
 from dotenv import load_dotenv
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))) #追加
-from config.localization import Localization
+from app.localization import Localization
 
 # 環境変数を読み込む
 load_dotenv()

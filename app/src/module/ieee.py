@@ -8,7 +8,7 @@ import sys
 import os #追加
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))) #追加
 #sys.path.append('../../')
-from config.localization import Localization
+from app.localization import Localization
 from dotenv import load_dotenv
 import os
 
