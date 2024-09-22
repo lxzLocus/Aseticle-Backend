@@ -5,9 +5,12 @@ from dotenv import load_dotenv
 import os
 import sys
 import threading
-sys.path.append('../')
-from app import scraping_main
+# app/googlescholar_searcher.py のパスを追加
+sys.path.append('../app')  # この行を追加
+from googlescholar_searcher import scraping_main  # モジュールをインポート
+
 from config import Localization
+
 
 # gRPC サーバーをインポート
 from server import serve as grpc_serve

@@ -1,6 +1,5 @@
 import grpc
 from concurrent import futures
-import sys
 from api.pkg import service_pb2
 from api.pkg import service_pb2_grpc
 
