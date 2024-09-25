@@ -5,15 +5,13 @@ from dotenv import load_dotenv
 import os
 import sys
 import threading
-# app/googlescholar_searcher.py のパスを追加
-sys.path.append('../app')  # この行を追加
+
+sys.path.append('/app/app')  
 from googlescholar_searcher import scraping_main  # モジュールをインポート
-
 from config import Localization
-
-
 # gRPC サーバーをインポート
-from app.grpc_server import serve as grpc_serve
+from grpc_server import serve as grpc_serve
+
 
 load_dotenv()
 app = Flask(__name__)
