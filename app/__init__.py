@@ -1,1 +1,1 @@
-from .localization import *
+from .googlescholar_searcher import *

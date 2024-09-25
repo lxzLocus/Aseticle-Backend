@@ -188,64 +188,53 @@ def add_entry(url, title, author, conference, pages, date, abstract, cite_num, s
     entries.append(new_entry)
 
 
-# MAIN
+#MAIN
 def load_acm_contents(siteData):
     asyncio.run(load_site_contents(siteData))
 
-async def load_site_contents(siteData):
-    entries = []
-    async with aiohttp.ClientSession() as session:
-        try:
-            tasks = [fetch_data(session, siteInfo) for siteInfo in siteData]
-            results = await asyncio.gather(*tasks)
+        tasks = [fetch_data(session, siteInfo) for siteInfo in siteData]
+        results = await asyncio.gather(*tasks)
+        
+        for siteInfo, acm_data, venue, citation_count, authors, api_abs in results:
+            title = acm_data.xpath("//meta[@property='og:title']/@content")[0]
             
-            for siteInfo, acm_data, venue, citation_count, authors, api_abs in results:
-                title = acm_data.xpath("//meta[@property='og:title']/@content")[0]
-                
-                # Author
-                # author = acm_data.xpath("span[contains(@property, 'givenName')]/text()")
-                
-                # Conference 
-                if acm_data.xpath("//*[@id='skip-to-main-content']/main/article/header/div/div[4]/div[1]/a/text()"):
-                    conf_explain = acm_data.xpath("//*[@id='skip-to-main-content']/main/article/header/div/div[4]/div[1]/a/text()")[0]
-                    conf_text = conf_explain.split()[0]
-                    conference = venue if venue else conf_text  
-                else:
-                    conference = None
-                
-                # Pages
-                if acm_data.xpath("//*[@id='skip-to-main-content']/main/article/header/div/div[4]/div[3]/span[1]/text()"):
-                    start_page = int(acm_data.xpath("//*[@id='skip-to-main-content']/main/article/header/div/div[4]/div[3]/span[1]/text()")[0])
-                    end_page = int(acm_data.xpath("//*[@id='skip-to-main-content']/main/article/header/div/div[4]/div[3]/span[2]/text()")[0])
-                    pages = end_page - start_page + 1
-                else:
-                    pages = None
-                
-                # Date
-                dateline = acm_data.xpath("//*[@id='skip-to-main-content']/main/article/header/div/div[5]/span[2]/text()")[0].strip()
-                date_obj = datetime.strptime(dateline, '%d %B %Y')
-                date = date_obj.strftime('%Y%m%d')
-                
-                # Abstract
-                if api_abs:
-                    abstract = api_abs
-                elif acm_data.xpath("//*[@id='abstract']/div/text()"):
-                    abstract = acm_data.xpath("//*[@id='abstract']/div/text()")
-                else:
-                    abstract = None
-                
-                # Cite num
-                cite_num = citation_count
-                
-                # Submitted ACMは常にtrue
-                submitted = True
-                
-                # エントリーを追加する
-                add_entry(siteInfo["url"], title, authors, conference, pages, date, abstract, cite_num, submitted, siteInfo["relevant_no"])
-        except Exception as e:
-            print(f"Error loading site contents: {e}")
-            # Handle exceptions accordingly
-
+            try:
+                conf_explain = acm_data.xpath("//*[@id='skip-to-main-content']/main/article/header/div/div[4]/div[1]/a/text()")[0]
+                conf_text = conf_explain.split()[0]
+                conference = venue if venue else conf_text
+            except:
+                conference = None
+            
+            try:
+                start_page = int(acm_data.xpath('//span[@property="pageStart"]/text()')[0])
+                end_page = int(acm_data.xpath('//span[@property="pageEnd"]/text()')[0])
+                pages = end_page - start_page + 1
+            except:
+                pages = None
+            
+            dateline = acm_data.xpath("//*[@id='skip-to-main-content']/main/article/header/div/div[5]/span[2]/text()")[0].strip()
+            date_obj = datetime.strptime(dateline, '%d %B %Y')
+            date = date_obj.strftime('%Y%m%d')
+            
+            abstract = api_abs if api_abs else (acm_data.xpath("//*[@id='abstract']/div/text()") or [None])[0]
+            
+            cite_num = citation_count
+            submitted = True
+            
+            new_entry = {
+                "url": siteInfo["url"],
+                "title": title,
+                "author": authors,
+                "conference": conference,
+                "pages": pages,
+                "date": date,
+                "abstract": abstract,
+                "cite_num": cite_num,
+                "submitted": submitted,
+                "relevant_no": siteInfo["relevant_no"],
+            }
+            entries.append(new_entry)
+    
     return entries
 
 async def acm_execute(siteData):
