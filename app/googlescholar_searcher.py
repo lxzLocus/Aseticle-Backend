@@ -14,8 +14,6 @@ load_dotenv()
 # SerpApiのAPIキーを環境変数から取得
 api_keys = [value for key, value in os.environ.items() if key.startswith("SERP_APIKEY")]
 
-query ="machine+learning"
-
 # 指定されたドメインのみを許可
 allowed_domains = ["https://dl.acm.org/", "https://arxiv.org/", "https://ieeexplore.ieee.org/", "https://www.sciencedirect.com/"]
 # 04
@@ -98,14 +96,31 @@ async def update_cite_num(all_data, new_cite):
 
 #02
 async def scraping_main(query):
-    acm, arxiv, ieee, sciencedirect ,citation_count= await search_googlescholar(query) #テスト用、実装時に消す　acm_test,arxiv_test, ieee_test, sciencedirect_test ,citation_count_test
-    result = []
-    result.append(await acm_execute(acm))
-    result.append(await arxiv_execute(arxiv))
-    result.append(await ieee_execute(ieee))
+    # acm, arxiv, ieee, sciencedirect ,citation_count= await search_googlescholar(query) #テスト用、実装時に消す　acm_test,arxiv_test, ieee_test, sciencedirect_test ,citation_count_test
+    # result = []
+    # result.append(await acm_execute(acm))
+    # result.append(await arxiv_execute(arxiv))
+    # result.append(await ieee_execute(ieee))
 
-    await update_cite_num(result, citation_count) #被引用数の上書き処理
-    print("all_data",result)
+    # await update_cite_num(result, citation_count) #被引用数の上書き処理
+    # print("all_data",result)
+    
+    result = [
+        {
+            "url": "https://example.com",
+            "title": "Sample Paper",
+            "author": "John Doe",
+            "conference": "Sample Conference",
+            "pages": 10,
+            "date": "240922",
+            "abstract": "This is a sample abstract.",
+            "cite_num": 5,
+            "submitted": True,
+            "relevant_no": 1,
+            "tier": 3
+        }
+    ]
+
 
     #matchingを呼び出す処理を付け加える
     return result
