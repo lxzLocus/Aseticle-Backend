@@ -5,9 +5,15 @@ from dotenv import load_dotenv
 import os
 import threading
 <<<<<<< HEAD:app/app.py
+<<<<<<< HEAD:app/app.py
 from src import scraping_main  # モジュールをインポート
 
 from app import Localization
+=======
+sys.path.append('../')
+from app import scraping_main
+from config import Localization
+>>>>>>> parent of fce2c0d ([WIP] file path 変更前):config/app.py
 =======
 sys.path.append('../')
 from app import scraping_main
