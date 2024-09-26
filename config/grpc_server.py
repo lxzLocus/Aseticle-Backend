@@ -7,7 +7,7 @@ from api.pkg import service_pb2_grpc
 
 import asyncio
 sys.path.append('/app/app')  
-from googlescholar_searcher import scraping_main 
+from googlescholar_searcher import scraping_main # type: ignore
 
 # サービサーの実装クラス
 class SearchScholarServicer(service_pb2_grpc.SearchScholarServicer):
