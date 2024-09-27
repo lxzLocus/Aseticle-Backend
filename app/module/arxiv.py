@@ -17,33 +17,6 @@ load_dotenv()
 
 ARXIV_URL = "https://arxiv.org/"
 
-# 環境変数からプロキシサーバリストを取得
-proxies1 = [
-	{"http": os.getenv("PROXY1"), "https": os.getenv("PROXY1")},
-    {"http": os.getenv("PROXY2"), "https": os.getenv("PROXY2")}
-]
-proxies2 = [
-	os.getenv("PROXY1"),
-    os.getenv("PROXY2")
-]
-proxy_index = 0
-
-ARXIV_URL = "https://arxiv.org/"
-
-# プロキシを交互に選択する関数1
-def get_next_proxy1():
-    global proxy_index
-    proxy = proxies1[proxy_index]
-    proxy_index = (proxy_index + 1) % len(proxies1)
-    return proxy
-
-# プロキシを交互に選択する関数2
-def get_next_proxy2():
-    global proxy_index
-    proxy = proxies2[proxy_index]
-    proxy_index = (proxy_index + 1) % len(proxies2)
-    return f"http://{proxy}"
-
 class WebScraper:
 
     def __init__(self, url):
@@ -55,8 +28,7 @@ class WebScraper:
 
     def fetch_page(self):
         try:
-            proxy = get_next_proxy1()
-            response = requests.get(self.url, headers=self.headers, proxies=proxy)
+            response = requests.get(self.url, headers=self.headers)
             response.raise_for_status()
             self.page_content = response.content
         except requests.exceptions.HTTPError as err:
@@ -84,8 +56,7 @@ class PdfCounter:
         
         async with aiohttp.ClientSession() as session:
             try:
-                proxy = get_next_proxy2()
-                async with session.get(pdf_url, proxy=proxy) as response:
+                async with session.get(pdf_url) as response:
                     if response.status == 200:
                         pdf_data = await response.read()
                         pdf_file = BytesIO(pdf_data)

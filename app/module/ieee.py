@@ -9,25 +9,6 @@ import os #追加
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))) #追加
 #sys.path.append('../../')
 from config.localization import Localization
-from dotenv import load_dotenv
-import os
-
-# 環境変数を読み込む
-load_dotenv()
-
-# 環境変数からプロキシサーバリストを取得
-proxies = [
-	{"http": os.getenv("PROXY1"), "https": os.getenv("PROXY1")},
-    {"http": os.getenv("PROXY2"), "https": os.getenv("PROXY2")}
-]
-proxy_index = 0
-
-# プロキシを交互に選択する関数
-def get_next_proxy():
-    global proxy_index
-    proxy = proxies[proxy_index]
-    proxy_index = (proxy_index + 1) % len(proxies)
-    return proxy
 
 IEEE_URL = "https://ieeexplore.ieee.org/"
 
@@ -53,8 +34,7 @@ class WebScraper:
 
 	def fetch_page(self):
 		try:
-			proxy = get_next_proxy()
-			response = requests.get(self.url, headers=self.headers, proxies=proxy)
+			response = requests.get(self.url, headers=self.headers)
 			response.raise_for_status()
 			self.page_content = response.content
 		except requests.exceptions.HTTPError as err:
@@ -110,7 +90,7 @@ class CiteNum:
 async def ieee_execute(param):
 	entries = []
 
-	for item in param:#変更　※paramキーを削除
+	for item in param:  #変更　※paramキーを削除
 		url = item["url"]
 		relevant_no = item["relevant_no"]
 		scraper = WebScraper(url)
@@ -132,17 +112,17 @@ async def ieee_execute(param):
 			cite_num = await CiteNum.fetch_cite_num(title)
 
 			new_entry = {
-				"url":		url,
-				"title":	title,
-				"author":	authors,
-				"conference":	conference,
-				"pages":	None,
-				"date":		date,
-				"abstract":	abstract,
-				"cite_num":	cite_num,
-				"submitted":	True,
-				"relevant_no":	relevant_no,
+				"url": url,
+				"title": title,
+				"author": authors,
+				"conference": conference,
+				"pages": None,
+				"date": date,
+				"abstract": abstract,
+				"cite_num": cite_num,
+				"submitted": True,
+				"relevant_no": relevant_no,
 			}
 			entries.append(new_entry)
 
-	return entries #変更　※resultキーを削除
+	return entries  #変更　※resultキーを削除
