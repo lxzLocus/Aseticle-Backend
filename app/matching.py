@@ -2,14 +2,14 @@ import polars as pl
 from rapidfuzz import process
 import json
 import asyncio
-
+from datetime import datetime
     
 async def fuzzy_match(entry) -> None:
     search_value = fetch_conf_name(entry)
 
     if search_value != "":
         conf_rank = (
-            pl.read_csv("data/conf_n_journal_list.csv")
+            pl.read_csv("/app/data/conf_n_journal_list.csv")  # 修正: フルパスを指定
             .filter(
                 (pl.col("title").str
                 .contains(pl.col("title")
@@ -25,21 +25,21 @@ async def fuzzy_match(entry) -> None:
         
         #変換
         conf_info = conf_rank.to_dict()
-        conf_name = conf_info["title"].to_list()
-        conf_tier = conf_info["tier"].to_list()
+        conf_name = conf_info["title"]
+        conf_tier = conf_info["tier"]
         if len(conf_name) == 0:
             conf_name = [""]
-            conf_tier = [-1]
+            conf_tier = [99]
     else:
         conf_name = [""]
-        conf_tier = [-1]
+        conf_tier = [99]
     
     fix_entry(entry, conf_name[0], conf_tier[0])
     
 
 def fetch_conf_name(entry) -> str:
-    if entry!=None and entry!={}: 
-        if entry["conference"] != None:
+    if entry != None and entry != {}:
+        if "conference" in entry and entry["conference"] != None:
             return entry["conference"]
     
     return ""
@@ -57,10 +57,12 @@ def fix_entry(entry, fixed_conf_name, tier):
         entry["conference"] = fixed_conf_name
     entry["tier"] = tier
 
+def default_converter(o):
+    if isinstance(o, datetime):
+        return o.__str__()
 
 # MAIN
-def match_conferences(entries):
-    for entry in entries:
-        asyncio.run(fuzzy_match(entry))
-
-    return json.dumps(entries, indent=4) #json形式で出力
+async def match_conferences(entries):
+    tasks = [asyncio.create_task(fuzzy_match(entry)) for entry in entries]
+    await asyncio.gather(*tasks)
+    return json.dumps(entries, default=default_converter, indent=4)  # json形式で出力

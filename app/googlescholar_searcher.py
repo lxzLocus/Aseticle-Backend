@@ -3,11 +3,17 @@ import aiohttp
 from dotenv import load_dotenv
 import os
 import sys
+import re
+import json
 
 sys.path.append('/app/app/module/') 
 from acm import acm_execute # type: ignore
 from arxiv import arxiv_execute # type: ignore
 from ieee import ieee_execute # type: ignore
+
+sys.path.append('/app/app') 
+from matching import match_conferences
+
 
 load_dotenv()
 # SerpApiのAPIキーを環境変数から取得
@@ -103,10 +109,34 @@ async def scraping_main(query):
     result.append(await arxiv_execute(arxiv))
     result.append(await ieee_execute(ieee))
 
-    await update_cite_num(result, citation_count) #被引用数の上書き処理
-    print("all_data",result)
+    await update_cite_num(result, citation_count)  # 被引用数の上書き処理
 
-    #matchingを呼び出す処理を付け加える
+    # result を平坦化する
+    flat_result = [item for sublist in result for item in sublist]
+
+    # matching を呼び出す処理を付け加える
+    result = await match_conferences(flat_result)
+
+    data = json.loads(result)
+
+    for record in data:
+        if 'date' in record:
+            # YYYYMMDD to YYMMDD
+            if re.match(r'^\d{8}$', record['date']):
+                record['date'] = record['date'][2:8]
+            # YYMMDD to YYMMDD
+            elif re.match(r'^\d{6}$', record['date']):
+                record['date'] = record['date']
+            # YYYY-MM-DD hh:mm:ss to YYMMDD
+            elif re.match(r'^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$', record['date']):
+                date_part = record['date'].split(' ')[0]
+                record['date'] = date_part[2:4] + date_part[5:7] + date_part[8:10]
+            else:
+                record['date'] = record['date']  # 変換できない場合はそのまま返す
+
+    result = json.dumps(data, indent=4)
+
+    print(result)
     return result
 
 # #テスト用
