@@ -80,15 +80,18 @@ class SemanticApi:
             async with session.get(
                 f"{base_url}{encoded_url}?fields={fields}"
             ) as response:
-                result = await response.json()
+                try:
+                    result = await response.json()
+                except:
+                    return None, None
 
-            if result:
-                # Ensure venue and citationCount are fetched correctly
-                venue = result.get("venue", None)
-                citation_count = result.get("citationCount", None)
-                return venue, citation_count
-            else:
-                return None, None
+                if result:
+                    # Ensure venue and citationCount are fetched correctly
+                    venue = result.get("venue", None)
+                    citation_count = result.get("citationCount", None)
+                    return venue, citation_count
+                else:
+                    return None, None
 
 async def arxiv_execute(param):
     entries = []
@@ -108,36 +111,57 @@ async def arxiv_execute(param):
         metadata = scraper.extract_metadata()
 
         if metadata:
-            # Retrieving contents from metadata
-            title = metadata.xpath("//meta[@property='og:title']/@content")[0]
-            authors = ", ".join(metadata.xpath("//div[@class='authors']/a/text()"))
-            conference = metadata.get('publicationTitle', '')
+            # Retrieving contents from metadata (タイトルを取得)
+            if metadata.xpath("//meta[@property='og:title']/@content"):
+                title = metadata.xpath("//meta[@property='og:title']/@content")[0]
+            else:
+                title = None
+
+            # 著者を取得
+            if metadata.xpath("//div[@class='authors']/a/text()"):
+                authors = ", ".join(metadata.xpath("//div[@class='authors']/a/text()"))
+            else:
+                authors = None
             
-            #######
-            if metadata.xpath("//td[@class='tablecell comments mathjax']/text()"):
-                conf_text = metadata.xpath("//td[@class='tablecell comments mathjax']/text()")[0]
-                search_terms = ['Accepted by ', 'Accepted for ', 'Published as', 'accepted', 'publish']
-            #######
-                
-            
-            dateline = metadata.xpath("//div[@class='dateline']/text()")[0].strip()
-            date_part = dateline.strip('[]').replace('Submitted on ', '')
-            clean_date_part = date_part.split(' ')[0:3]
-            clean_date_str = ' '.join(clean_date_part)
-            date_obj = datetime.strptime(clean_date_str, '%d %b %Y')
-            date = date_obj.strftime('%y%m%d')
-            
-            abstract = metadata.xpath("//meta[@property='og:description']/@content")[0]
+            # Conference（会議名）を取得
+            venue, api_cite_num = await SemanticApi.fetch_semantic_api(url)
+            if not venue:
+                conference = metadata.xpath("//meta[@name='citation_conference']/@content")[0] if metadata.xpath("//meta[@name='citation_conference']/@content") else None
+            else:
+                conference = venue
+
+            # 日付を取得
+            if metadata.xpath("//div[@class='dateline']/text()"):
+                dateline = metadata.xpath("//div[@class='dateline']/text()")[0].strip()
+                date_part = dateline.strip('[]').replace('Submitted on ', '')
+                clean_date_part = date_part.split(' ')[0:3]
+                clean_date_str = ' '.join(clean_date_part)
+                date_obj = datetime.strptime(clean_date_str, '%d %b %Y')
+                date = date_obj.strftime('%y%m%d')
+            else:
+                date = None
+
+            # Abstractを取得
+            if metadata.xpath("//meta[@property='og:description']/@content"):
+                abstract = metadata.xpath("//meta[@property='og:description']/@content")[0]
+            else:
+                abstract = None
+
+            # 提出フラグ
             submitted = bool(metadata.xpath("//td[@class='tablecell comments mathjax']/text()"))
             
+            # PDFページ数の取得
             status, pages = await PdfCounter.fetch_pdf_pages(url)
-            venue, cite_num = await SemanticApi.fetch_semantic_api(url)
             
+            # 引用数を取得 (APIから取得した引用数が優先)
+            cite_num = api_cite_num if api_cite_num else cite_num
+
+            # 新しいエントリを作成
             new_entry = {
                 "url": url,
                 "title": title,
                 "author": authors,
-                "conference": venue,
+                "conference": conference,
                 "pages": pages,
                 "date": date,
                 "abstract": abstract,

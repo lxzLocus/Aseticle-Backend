@@ -12,7 +12,6 @@ import os
 load_dotenv()
 
 class WebScraper:
-
     def __init__(self, url):
         self.url = url
 
@@ -46,7 +45,8 @@ class SemanticApi:
                 res_json = json.loads(res)
                 
                 # 指定されたフィールドを抽出
-                venue = res_json.get("venue")
+                title = res_json.get("title")
+                venue = res_json.get("venue") or res_json.get("publicationVenue")
                 citation_count = res_json.get("citationCount")
                 author_list = res_json.get("authors")
                 if author_list:
@@ -59,16 +59,16 @@ class SemanticApi:
                 else:
                     api_abs = None
             
-                return venue, citation_count, authors, api_abs
+                return title, venue, citation_count, authors, api_abs
         except:
-            return None, None, None, None
+            return None, None, None, None, None
 
 async def fetch_data(session, siteInfo):
     scraper = WebScraper(siteInfo["url"])
     acm_data = await scraper.fetch_page(session)
-    venue, citation_count, authors, api_abs = await SemanticApi.fetch_metadata(session, siteInfo["url"])
+    title, venue, citation_count, authors, api_abs = await SemanticApi.fetch_metadata(session, siteInfo["url"])
     
-    return siteInfo, acm_data, venue, citation_count, authors, api_abs
+    return siteInfo, acm_data, title, venue, citation_count, authors, api_abs
 
 async def load_site_contents(siteData):
     entries = []
@@ -77,26 +77,23 @@ async def load_site_contents(siteData):
             tasks = [fetch_data(session, siteInfo) for siteInfo in siteData]
             results = await asyncio.gather(*tasks)
             
-            for siteInfo, acm_data, venue, citetion_count, authors, api_abs in results:
-                # Title
-                title = acm_data.xpath("//meta[@property='og:title']/@content")[0]
+            for siteInfo, acm_data, title, venue, citation_count, authors, api_abs in results:
+                # Title (APIから取得できなかった場合はスクレイピング)
+                if not title:
+                    title = acm_data.xpath("//meta[@property='og:title']/@content")[0]
                 
-                # Conference 
-                if acm_data.xpath("//*[@id='skip-to-main-content']/main/article/header/div/div[4]/div[1]/a/text()"):
+                # Conference (APIから取得できなかった場合はスクレイピング)
+                if not venue and acm_data.xpath("//*[@id='skip-to-main-content']/main/article/header/div/div[4]/div[1]/a/text()"):
                     conf_explain = acm_data.xpath("//*[@id='skip-to-main-content']/main/article/header/div/div[4]/div[1]/a/text()")[0]
-                    conf_text = conf_explain.split()[0]
-                    if venue:   #要確認
-                        conference = venue
-                    else:
-                        conference = conf_text  
+                    conference = conf_explain.split()[0]
                 else:
-                    conference = None
+                    conference = venue
                 
                 # Pages
-                if acm_data.xpath("//*[@id='skip-to-main-content']/main/article/header/div/div[4]/div[3]/span[1]/text()")[0]:
+                if acm_data.xpath("//*[@id='skip-to-main-content']/main/article/header/div/div[4]/div[3]/span[1]/text()"):
                     start_page = int(acm_data.xpath("//*[@id='skip-to-main-content']/main/article/header/div/div[4]/div[3]/span[1]/text()")[0])
                     end_page = int(acm_data.xpath("//*[@id='skip-to-main-content']/main/article/header/div/div[4]/div[3]/span[2]/text()")[0])
-                    pages = pages = end_page - start_page + 1
+                    pages = end_page - start_page + 1
                 else:
                     pages = None
                 
@@ -105,16 +102,14 @@ async def load_site_contents(siteData):
                 date_obj = datetime.strptime(dateline, '%d %B %Y')
                 date = date_obj.strftime('%Y%m%d')
                 
-                # Abstract
-                if api_abs:
-                    abstract = api_abs
-                elif acm_data.xpath("//*[@id='abstract']/div/text()"):
-                    abstract=acm_data.xpath("//*[@id='abstract']/div/text()")
+                # Abstract (APIから取得できなかった場合はスクレイピング)
+                if not api_abs and acm_data.xpath("//*[@id='abstract']/div/text()"):
+                    abstract = acm_data.xpath("//*[@id='abstract']/div/text()")
                 else:
-                    abstract = None
+                    abstract = api_abs
                 
-                # Cite num 要確認
-                cite_num = citetion_count
+                # Cite num
+                cite_num = citation_count
                 
                 # Submitted ACMは常にtrue
                 submitted = True
