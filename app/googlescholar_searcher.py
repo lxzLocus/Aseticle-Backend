@@ -19,7 +19,7 @@ load_dotenv()
 # SerpApiのAPIキーを環境変数から取得
 api_keys = [value for key, value in os.environ.items() if key.startswith("SERP_APIKEY")]
 
-query ="machine+learning"
+
 
 # 指定されたドメインのみを許可
 allowed_domains = ["https://dl.acm.org/", "https://arxiv.org/", "https://ieeexplore.ieee.org/", "https://www.sciencedirect.com/"]
@@ -140,6 +140,6 @@ async def scraping_main(query):
     return result
 
 # #テスト用
-# if __name__ == "__main__":
-#     query = "fuzzing"
-#     asyncio.run(scraping_main(query))
+if __name__ == "__main__":
+    query ="machine+learning"
+    asyncio.run(scraping_main(query))
