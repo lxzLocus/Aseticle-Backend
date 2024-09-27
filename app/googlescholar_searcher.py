@@ -1,10 +1,13 @@
-from module.acm import acm_execute
-from module.arxiv import arxiv_execute
-from module.ieee import ieee_execute
 import asyncio
 import aiohttp
 from dotenv import load_dotenv
 import os
+import sys
+
+sys.path.append('/app/app/module/') 
+from acm import acm_execute # type: ignore
+from arxiv import arxiv_execute # type: ignore
+from ieee import ieee_execute # type: ignore
 
 load_dotenv()
 # SerpApiのAPIキーを環境変数から取得

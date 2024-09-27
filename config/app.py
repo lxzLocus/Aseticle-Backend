@@ -4,8 +4,9 @@ import asyncio
 from dotenv import load_dotenv
 import os
 import sys
-sys.path.append('../')
-from app import scraping_main
+sys.path.append('/app/app')
+from googlescholar_searcher import scraping_main # type: ignore
+sys.path.append('/app/config')
 from config import Localization
 
 load_dotenv()
